@@ -25,38 +25,46 @@ router.post("/", adminAuth, async (req, res) => {
 
 // Listar produtos (público, com filtros opcionais e paginação)
 router.get("/", async (req, res) => {
-  const { category, active, page = 1, limit = 10, paginated = "true" } = req.query;
-  const where = {};
-
-  if (category) where.categoryId = parseInt(category);
-  if (active !== undefined) where.active = active === "true";
-
   try {
-    // Se paginated=false, retorna todos os produtos sem paginação (backward compatibility)
+    const {
+      category,
+      active,
+      page = "1",
+      limit = "10",
+      paginated = "true"
+    } = req.query;
+
+    const where = {};
+
+    if (category) where.categoryId = parseInt(category);
+
+    if (active !== undefined && active !== "")
+      where.active = active === "true";
+
+    // 🔥 Converte page/limit de forma segura
+    const pageNum = Number.isFinite(parseInt(page)) ? parseInt(page) : 1;
+    const limitNum = Number.isFinite(parseInt(limit)) ? parseInt(limit) : 10;
+
     if (paginated === "false") {
       const products = await prisma.product.findMany({
         where,
         include: { category: true },
         orderBy: { id: "desc" },
       });
+
       return res.json(products);
     }
 
-    // Converte page e limit para números e valida
-    const pageNum = Math.max(1, parseInt(page));
-    const limitNum = Math.min(100, Math.max(1, parseInt(limit))); // Max 100 itens por página
     const skip = (pageNum - 1) * limitNum;
 
-    // Busca os produtos paginados
     const products = await prisma.product.findMany({
       where,
       include: { category: true },
       skip,
       take: limitNum,
-      orderBy: { id: "desc" }, // Ordenação padrão por ID decrescente
+      orderBy: { id: "desc" },
     });
 
-    // Conta o total de produtos para calcular total de páginas
     const total = await prisma.product.count({ where });
 
     res.json({
@@ -71,6 +79,7 @@ router.get("/", async (req, res) => {
       },
     });
   } catch (error) {
+    console.log("PRODUCT ERROR:", error);
     res.status(400).json({ error: error.message });
   }
 });
