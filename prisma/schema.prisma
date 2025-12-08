@@ -41,14 +41,16 @@ model Product {
 }
 
 model Cart {
-  id           Int        @id @default(autoincrement())
-  uid          String     @unique
-  customerName String?
-  phone        String?
-  note         String?
-  items        CartItem[]
-  createdAt    DateTime   @default(now())
-  updatedAt    DateTime   @updatedAt
+  id             Int        @id @default(autoincrement())
+  uid            String     @unique
+  customerName   String?
+  phone          String?
+  note           String?
+  deliveryMethod String?    @default("delivery") // "delivery" ou "pickup"
+  address        String?    // endereço de entrega (quando deliveryMethod = "delivery")
+  items          CartItem[]
+  createdAt      DateTime   @default(now())
+  updatedAt      DateTime   @updatedAt
 }
 
 model CartItem {
